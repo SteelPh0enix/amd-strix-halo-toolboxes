@@ -5,7 +5,7 @@ on:
     inputs:
       backends:
         description: >
-          Comma-separated backends to build (e.g. "rocm-10.0", "rocm-10.0-engramhalo", "vulkan-radv-performance").
+          Comma-separated backends to build (e.g. "rocm-10.0", "hrx-staging", "vulkan-radv-performance").
           Use "all" to build the standard auto-built set.
         required: false
         default: all
@@ -93,6 +93,7 @@ jobs:
           IMM="${DOCKERHUB_REPO}:${TAG}"
           CHN="${DOCKERHUB_REPO}:${NAME}"
 
+          test -f "${DF}" || { echo "Unknown backend: ${B} (${DF} missing)" >&2; exit 1; }
           echo "→ Building ${DF}"
           docker build --no-cache -t "${LI}" -f "${DF}" .
 

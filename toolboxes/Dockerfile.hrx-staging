@@ -1,0 +1,33 @@
+# Experimental HRX-enabled llama.cpp from AMD's matched staging submodules.
+# The staging build pins its TheRock artifact and bundles the runtime libraries.
+FROM registry.fedoraproject.org/fedora:44 AS builder
+
+RUN dnf -y --nodocs --setopt=install_weak_deps=False install \
+    binutils cmake gcc gcc-c++ git-core make ninja-build \
+    python3 python3-pip python3-virtualenv \
+    && dnf clean all && rm -rf /var/cache/dnf/*
+
+WORKDIR /opt/ggml-staging
+ARG STAGING_BRANCH=main
+RUN git clone --depth 1 --branch "${STAGING_BRANCH}" \
+    https://github.com/ROCm/ggml-staging-automation.git . \
+    && git submodule update --init hrx-system llama.cpp
+
+RUN python3 -m venv /opt/hrx-venv \
+    && /opt/hrx-venv/bin/pip install --no-cache-dir -r requirements.txt \
+    && /opt/hrx-venv/bin/python scripts/hrx/build/build_all.py
+
+FROM registry.fedoraproject.org/fedora-minimal:44
+
+RUN microdnf -y --nodocs --setopt=install_weak_deps=0 install \
+    bash ca-certificates libatomic libcurl libgcc libgomp libstdc++ \
+    procps-ng sudo \
+    && microdnf clean all && rm -rf /var/cache/dnf/*
+
+# build_all.py installs llama.cpp and its bundled HRX/Loom/ROCm libraries here.
+COPY --from=builder /opt/ggml-staging/build/llama.cpp-install/ /usr/local/
+ENV LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib/rocm_sysdeps/lib
+RUN printf '%s\n' /usr/local/lib /usr/local/lib/rocm_sysdeps/lib \
+    > /etc/ld.so.conf.d/hrx.conf && ldconfig
+
+CMD ["/bin/bash"]
