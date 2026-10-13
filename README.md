@@ -70,6 +70,7 @@ These use nightly or custom backend stacks. Their rebuild policy is noted below.
 | `rocm-7.2.4-rdma-fix` | ROCm 7.2.4 (Custom) | Test build from `kyuz0/llama.cpp:fix/rpc-rdma-inline-fallback`, which retries RDMA QP creation without inline data. Manual build only. |
 | `rocm-7.2.4-turboquant` | ROCm 7.2.4 (Custom) | Custom TurboQuant build for AMD Strix Halo. Manual build only. |
 | `therock-nightly` | TheRock Nightly | Tracks the latest TheRock `gfx1151` nightly tarball from AMD's current `nightly.repo.amd.com` release stream using the [official release layout](https://github.com/ROCm/TheRock/blob/main/RELEASES.md). A dedicated poller auto-builds it when AMD publishes a new tarball. |
+| `rocm-10.1-gfx1100` | ROCm 10.1 (Desktop RDNA3) | Baseline upstream `llama.cpp` for **discrete** desktop cards - `gfx1100` (Radeon RX 7900 XT / XTX / GRE) - without the Strix Halo patches or iGPU workarounds. Not published to Docker Hub, build it locally. See the [desktop ROCm toolbox guide](docs/rocm-10.1-gfx1100.md). |
 | `hrx-staging` | HRX (Experimental) | Builds AMD's [HRX-enabled llama.cpp staging tree](https://github.com/ROCm/ggml-staging-automation) with its pinned `hrx-system`, `llama.cpp`, and TheRock revisions. The upstream build bundles the runtime libraries, so the image needs no separate ROCm installation. Intended here for Strix Halo (`gfx1151`) on Linux; model coverage is still evolving. Manual build only. See [local build and validation steps](docs/building.md#experimental-hrx-toolbox). |
 
 > [!IMPORTANT]
@@ -221,6 +222,7 @@ Run models across a cluster of Strix Halo machines using `run_distributed_llama.
 *   [Legacy benchmark archive](https://kyuz0.github.io/amd-strix-halo-toolboxes/)
 *   [docs/vram-estimator.md](docs/vram-estimator.md)
 *   [docs/building.md](docs/building.md)
+*   [docs/rocm-10.1-gfx1100.md](docs/rocm-10.1-gfx1100.md) - baseline llama.cpp for desktop RDNA3 (RX 7900 XT)
 *   [docs/troubleshooting-firmware.md](docs/troubleshooting-firmware.md)
 
 ## References

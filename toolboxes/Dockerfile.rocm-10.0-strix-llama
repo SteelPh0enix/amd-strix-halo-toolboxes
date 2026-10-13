@@ -128,8 +128,12 @@ EOF
 
 WORKDIR /opt/llama.cpp
 ARG REPO=https://github.com/halo-box/strix-llama.cpp.git
-ARG BRANCH=master
-RUN git clone -b ${BRANCH} --single-branch ${REPO} .
+# Pinned commit, not a branch: master HEAD (04c6faa) crashes on Strix Halo, so build
+# from this known-good revision instead. A full (blobless) clone is needed so the commit
+# resolves; --single-branch only fetches one branch's history.
+ARG COMMIT=04c6faa4c31fc89b6388ab262fc807113bb8c2ab
+RUN git clone --filter=blob:none ${REPO} . \
+  && git -c advice.detachedHead=false checkout "${COMMIT}"
 
 COPY llama-grammar.patch /tmp/llama-grammar.patch
 COPY llama-cpp-25992-rocm-host-buffer.patch /tmp/llama-cpp-25992-rocm-host-buffer.patch
@@ -149,7 +153,7 @@ RUN git clean -xdf \
      fi \
   && (patch -p1 -N --fuzz=3 < /tmp/llama-grammar.patch || \
       grep -q 'MAX_REPETITION_THRESHOLD 100000' src/llama-grammar.cpp || \
-      { echo "ERROR: grammar patch no longer applies to ${REPO} ${BRANCH}"; exit 1; }) \
+      { echo "ERROR: grammar patch no longer applies to ${REPO} ${COMMIT}"; exit 1; }) \
   && cmake -S . -B build \
   -G Ninja \
   -DGGML_HIP=ON \
@@ -174,7 +178,7 @@ RUN git clean -xdf \
   && build/bin/test-backend-sched-ring \
   && cmake --install build
 
-# Record what went into the image: nothing here is pinned, so this is the only
+# Record what went into the image. llama.cpp is pinned to a commit below, so this is the
 # trace of the upstream revisions a given tag was built from.
 RUN <<'EOF'
 set -eux
@@ -183,7 +187,7 @@ set -eux
   printf 'rocm_systems=%s (%s)\n' \
     "$(git -C /opt/strix/src/rocm-systems rev-parse --short HEAD)" "${ROCM_SYSTEMS_BRANCH}"
   printf 'llama_cpp=%s (%s)\n' \
-    "$(git -C /opt/llama.cpp rev-parse --short HEAD)" "${BRANCH}"
+    "$(git -C /opt/llama.cpp rev-parse --short HEAD)" "${COMMIT}"
 } > /opt/strix/versions.txt
 cat /opt/strix/versions.txt
 EOF
